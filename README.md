@@ -1,2 +1,1 @@
-# redhat
-Redhat index
+# Redhat
