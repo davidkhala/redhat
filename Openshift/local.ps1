@@ -6,6 +6,7 @@ function Fetch {
 function Setup {
     # crc should be run in a shell without administrator rights
     Write-Output yes | crc setup
+    # Restart is required for Hyper-V install
 }
 function Setup-AsRoot {
     # Force crc to be run in a shell with administrator rights
@@ -26,6 +27,19 @@ function Run {
     else {
         crc start -p $PullSecret
     }
+}
+function Set-Preset {
+    param(
+        [ValidateSet("openshift", "okd", "microshift")]
+        $value
+    )
+    crc config set preset $value
+}
+function Open {
+    Start-Process "https://console-openshift-console.apps-crc.testing"
+    # Log in as user:
+    #   Username: developer
+    #   Password: developer
 }
 if ($args.Count -gt 0) {
     Invoke-Expression ($args -join " ")
