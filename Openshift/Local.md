@@ -12,7 +12,7 @@ aka. Red Hat CodeReady Containers (CRC)
 Minimum Hardware
 
 |Preset Name| Description |CPUs| RAM| Disk Space|
-| ---- |---- |---- |---- |---- |---- |
+| ---- |---- |----  |---- |---- |
 |`openshift`| OpenShift Container Platform (default) | 4 |10.5 GB| 35 GB|
 |`okd` | OKD |4 |10.5 GB| 35 GB|
 |`microshift` |MicroShift| 2 |4 GB |35 GB|
