@@ -5,6 +5,8 @@
 - [January 16, 2024 GA](https://www.redhat.com/en/about/press-releases/red-hat-developer-hub-now-generally-available)
 - It is based on [BackStage.io](https://github.com/davidkhala/code-dev-collection/tree/main/backstage)
 
+[Trial](https://www.redhat.com/en/technologies/cloud-computing/developer-hub/trial)
+
 # Run
 
 Requirement: one of
