@@ -9,4 +9,8 @@ ubuntu-preset() {
     sudo apt install -y virtiofsd virt-manager
 }
 
+open() {
+    xdg-open https://console-openshift-console.apps-crc.testing
+}
+
 "$@"
