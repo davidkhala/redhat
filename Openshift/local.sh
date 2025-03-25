@@ -24,5 +24,9 @@ ubuntu-preset() {
 open() {
     xdg-open https://console-openshift-console.apps-crc.testing
 }
-
+uninstall() {
+    crc cleanup
+    echo y | crc delete
+    sudo rm -rf ~/.crc
+}
 "$@"
