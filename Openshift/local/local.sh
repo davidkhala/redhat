@@ -6,7 +6,6 @@ install() {
     chmod +x crc
     sudo mv crc /usr/local/bin
     echo y | crc setup
-    sudo reboot
 }
 
 run() {
@@ -17,16 +16,17 @@ run() {
         crc start -p $PullSecret
     fi
 }
-ubuntu-preset() {
+
+ubuntu-install() {
     sudo apt install -y curl virtiofsd virt-manager
+    install
+    sudo reboot
+    :
+    crc setup
 }
 
 open() {
     xdg-open https://console-openshift-console.apps-crc.testing
 }
-uninstall() {
-    crc cleanup
-    echo y | crc delete
-    sudo rm -rf ~/.crc
-}
+
 "$@"
