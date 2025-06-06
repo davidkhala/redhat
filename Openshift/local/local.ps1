@@ -42,7 +42,6 @@ function Open {
     #   Password: developer
 }
 function Uninstall{
-
     crc cleanup
 }
 if ($args.Count -gt 0) {
