@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Standalone DMN Editor — Example</title>
+  <style>
+    html,body { height:100%; margin:0; font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif }
+    #toolbar { padding:8px; background:#f5f5f5; border-bottom:1px solid #e0e0e0 }
+    #editor { width:100%; height:calc(100% - 48px); background:white }
+    #status { padding:8px; font-size:13px; color:#333 }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <strong>Standalone DMN Editor — Example</strong>
+    <span id="status" style="margin-left:16px">Loading...</span>
+  </div>
+
+  <div id="editor"></div>
+
+  <!--
+    Load the standalone DMN editor bundle from jsDelivr CDN.
+    The package exports a global window.DMNStandaloneEditor or similar.
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/@ibm/bamoe-standalone-dmn-editor@latest/dist/envelope.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ibm/bamoe-standalone-dmn-editor@latest/dist/index.js"></script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      const mount = document.getElementById('editor');
+      const status = document.getElementById('status');
+
+      // Give the CDN scripts a moment to load
+      await new Promise(r => setTimeout(r, 1000));
+
+      // The bundle exports DmnEditor as a global
+      if (!window.DmnEditor) {
+        status.innerText = 'Error: DmnEditor not found in window';
+        console.warn('Available window keys:', Object.keys(window).filter(k => !k.startsWith('_')).slice(-30));
+        return;
+      }
+
+      status.innerText = 'Initializing DMN Editor...';
+
+      try {
+        // Use the official API: DmnEditor.open()
+        const editor = DmnEditor.open({
+          container: mount,
+          initialFileNormalizedPosixPathRelativeToTheWorkspaceRoot: 'model.dmn',
+          initialContent: Promise.resolve(''),
+          readOnly: false,
+          resources: new Map(),
+        });
+
+        status.innerText = '✓ DMN Editor ready';
+        console.log('Editor initialized:', editor);
+      } catch (err) {
+        console.error('Initialization error:', err);
+        status.innerText = `Error: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

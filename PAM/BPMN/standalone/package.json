@@ -1,5 +1,5 @@
 {
-    "name": "bpmn-standalone-editor-demo",
+    "name": "bamoe-standalone-bpmn-editor-demo",
     "private": true,
     "type": "module",
     "scripts": {
