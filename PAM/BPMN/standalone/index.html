@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Standalone BPMN Editor Demo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f5f7;
+      color: #222;
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 1rem 1.5rem;
+      background: #1a5d95;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem;
+    }
+
+    .editor-panel {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .editor-container {
+      min-height: 72vh;
+      border: 1px solid #c8cbd1;
+      border-radius: 8px;
+      background: white;
+      overflow: visible;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      background: #1a5d95;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    button:hover {
+      background: #164b76;
+      transform: translateY(-1px);
+    }
+
+    .status-panel {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .status-panel .log {
+      flex: 1 1 45%;
+      min-width: 280px;
+      min-height: 180px;
+    }
+
+    .log {
+      white-space: pre-wrap;
+      background: #0f1729;
+      color: #cbd5e1;
+      padding: 1rem;
+      border-radius: 8px;
+      min-height: 130px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      overflow: auto;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem 1.5rem;
+      font-size: 0.95rem;
+      color: #5f6f85;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>Standalone BPMN Editor Demo</header>
+    <main>
+      <div class="editor-panel">
+        <div id="bpmn-editor-container" class="editor-container"></div>
+        <div class="controls">
+          <button id="btn-load-bpmn">Load BPMN File</button>
+          <button id="btn-load-resource">Load Resource File</button>
+          <button id="btn-download-bpmn">Download BPMN</button>
+          <button id="btn-save-resources">Download Resources</button>
+          <button id="btn-get-preview">Get SVG Preview</button>
+          <button id="btn-undo">Undo</button>
+          <button id="btn-redo">Redo</button>
+          <button id="btn-close">Close Editor</button>
+        </div>
+        <div class="status-panel">
+          <div id="resource-list" class="log">当前资源: 无</div>
+          <div id="log" class="log">日志将在这里显示。</div>
+        </div>
+      </div>
+    </main>
+    <footer>使用 <code>@ibm/bamoe-standalone-bpmn-editor</code> 嵌入 BPMN 编辑器。</footer>
+  </div>
+
+  <input id="input-bpmn-file" type="file" accept=".bpmn,application/xml,text/xml" hidden />
+  <input id="input-resource-file" type="file" accept=".dmn,.bpmn,.xml,text/*" hidden multiple />
+
+  <script type="module">
+    import * as BpmnEditor from "@ibm/bamoe-standalone-bpmn-editor/dist";
+
+    const logElement = document.getElementById("log");
+    const resourceListElement = document.getElementById("resource-list");
+    const bpmnFileInput = document.getElementById("input-bpmn-file");
+    const resourceFileInput = document.getElementById("input-resource-file");
+
+    let editor = null;
+    let currentFilePath = "model.bpmn";
+    let currentContent = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_1" name="Start" />
+  </bpmn:process>
+</bpmn:definitions>`;
+    const resources = new Map();
+
+    function log(message) {
+      logElement.textContent = `${new Date().toLocaleTimeString()} · ${message}\n` + logElement.textContent;
+    }
+
+    function updateResourceList() {
+      if (resources.size === 0) {
+        resourceListElement.textContent = "当前资源: 无";
+        return;
+      }
+      const items = Array.from(resources.keys()).map((path) => `- ${path}`).join("\n");
+      resourceListElement.textContent = `当前资源:\n${items}`;
+    }
+
+    function downloadFile(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function openEditor(initialContent, filePath, resourceMap) {
+      if (editor) {
+        try {
+          editor.close();
+        } catch (error) {
+          log(`关闭旧编辑器失败: ${error?.message || error}`);
+        }
+        editor = null;
+      }
+
+      editor = BpmnEditor.open({
+        container: document.getElementById("bpmn-editor-container"),
+        initialContent: Promise.resolve(initialContent),
+        initialFileNormalizedPosixPathRelativeToTheWorkspaceRoot: filePath,
+        readOnly: false,
+        resources: resourceMap,
+        onError: (error) => {
+          log(`Editor error: ${error?.message || error}`);
+        },
+      });
+
+      editor.subscribeToContentChanges((isDirty) => {
+        log(`内容变更: ${isDirty ? "已修改" : "已保存"}`);
+      });
+
+      log(`已打开编辑器: ${filePath}`);
+    }
+
+    async function ensureEditor() {
+      if (!editor) {
+        openEditor(currentContent, currentFilePath, resources);
+      }
+      return editor;
+    }
+
+    document.getElementById("btn-load-bpmn").addEventListener("click", () => {
+      bpmnFileInput.value = "";
+      bpmnFileInput.click();
+    });
+
+    document.getElementById("btn-load-resource").addEventListener("click", () => {
+      resourceFileInput.value = "";
+      resourceFileInput.click();
+    });
+
+    bpmnFileInput.addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) {
+        return;
+      }
+      const text = await file.text();
+      currentFilePath = file.name;
+      currentContent = text;
+      log(`已加载 BPMN 文件: ${file.name}`);
+
+      try {
+        const currentEditor = await ensureEditor();
+        await currentEditor.setContent(currentFilePath, currentContent);
+        log(`已设置内容到编辑器: ${currentFilePath}`);
+      } catch (error) {
+        log(`setContent 失败，重新打开编辑器: ${error?.message || error}`);
+        openEditor(currentContent, currentFilePath, resources);
+      }
+    });
+
+    resourceFileInput.addEventListener("change", async (event) => {
+      const files = Array.from(event.target.files || []);
+      if (files.length === 0) {
+        return;
+      }
+
+      for (const file of files) {
+        const text = await file.text();
+        resources.set(file.name, {
+          contentType: "text",
+          content: Promise.resolve(text),
+        });
+        log(`已加载资源文件: ${file.name}`);
+      }
+
+      updateResourceList();
+      log("正在重新打开编辑器以应用新资源...");
+      openEditor(currentContent, currentFilePath, resources);
+    });
+
+    document.getElementById("btn-download-bpmn").addEventListener("click", async () => {
+      const currentEditor = await ensureEditor();
+      const xml = await currentEditor.getContent();
+      downloadFile(currentFilePath, xml, "application/xml;charset=utf-8");
+      log(`已下载 BPMN: ${currentFilePath}`);
+    });
+
+    document.getElementById("btn-save-resources").addEventListener("click", async () => {
+      if (resources.size === 0) {
+        log("没有可下载的资源。");
+        return;
+      }
+      for (const [path, resource] of resources.entries()) {
+        const content = await resource.content;
+        const mimeType = resource.contentType === "binary" ? "application/octet-stream" : "text/plain;charset=utf-8";
+        downloadFile(path, content, mimeType);
+      }
+      log("已下载所有资源文件。");
+    });
+
+    document.getElementById("btn-get-preview").addEventListener("click", async () => {
+      const currentEditor = await ensureEditor();
+      const svg = await currentEditor.getPreview();
+      log(`获取 SVG 预览，长度 ${svg.length}`);
+      downloadFile("preview.svg", svg, "image/svg+xml;charset=utf-8");
+    });
+
+    document.getElementById("btn-undo").addEventListener("click", async () => {
+      const currentEditor = await ensureEditor();
+      currentEditor.undo();
+      log("执行 Undo");
+    });
+
+    document.getElementById("btn-redo").addEventListener("click", async () => {
+      const currentEditor = await ensureEditor();
+      currentEditor.redo();
+      log("执行 Redo");
+    });
+
+    openEditor(currentContent, currentFilePath, resources);
+    updateResourceList();
+  </script>
+</body>
+</html>
