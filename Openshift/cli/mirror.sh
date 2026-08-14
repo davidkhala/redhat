@@ -1,5 +1,6 @@
 
 download(){
+  # for x86_64 
   wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/oc-mirror.tar.gz
   
 }
