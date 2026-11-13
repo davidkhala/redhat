@@ -10,6 +10,9 @@ run() {
         crc start -p $PullSecret
     fi
 }
+stop() {
+	crc stop
+}
 
 install-oc() {
     wget --no-check-certificate https://downloads-openshift-console.apps-crc.testing/amd64/linux/oc.tar
