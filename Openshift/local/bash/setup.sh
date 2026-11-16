@@ -16,6 +16,13 @@ install-oc() {
 	sudo mv oc /usr/local/bin
 	oc version
 }
+resize() {
+	crc stop
+	crc config set memory 51200
+	crc config set cpus 6
+	crc config view
+	crc start
+}
 
 setup() {
 	echo y | crc setup
