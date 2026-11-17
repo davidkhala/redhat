@@ -8,7 +8,7 @@ install(){
   tar -xvf oc-mirror.tar.gz
   chmod +x oc-mirror
   sudo mv oc-mirror /usr/local/bin/
-  oc-mirror version  # 验证
+  oc-mirror version  # validate
 
 }
 $@

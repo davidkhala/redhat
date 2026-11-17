@@ -17,11 +17,27 @@ install-oc() {
 	oc version
 }
 resize() {
-	crc stop
-	crc config set memory 51200
-	crc config set cpus 6
+	crc stop --force false || true
+
+	local HOST_CPUS=$(nproc)
+	local TARGET_CPUS=$((HOST_CPUS * 75 / 100))
+	crc config set cpus $TARGET_CPUS # default 4
+
+	local HOST_MEM_MB=$(free -m | awk '/Mem:/ {print $2}')
+	local TARGET_MEM=$((HOST_MEM_MB * 75 / 100))
+
+	crc config set memory $TARGET_MEM # default 10752 (MiB)
+	crc config set disk-size 100      # default 31 (GiB)
 	crc config view
 	crc start
+}
+reset-size() {
+	crc config unset memory
+	crc config get memory
+	crc config unset cpus
+	crc config get cpus
+	crc config unset disk-size
+	crc config get disk-size
 }
 
 setup() {
