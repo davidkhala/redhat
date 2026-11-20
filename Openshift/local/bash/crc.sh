@@ -1,16 +1,5 @@
 set -e
 
-run() {
-	local PullSecret=$1
-	if [ -z "$PullSecret" ]; then
-		crc start
-	else
-		crc start -p $PullSecret
-	fi
-}
-stop() {
-	crc stop
-}
 
 oc-login() {
 	eval $(crc oc-env)

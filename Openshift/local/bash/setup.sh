@@ -16,8 +16,32 @@ install-oc() {
 	sudo mv oc /usr/local/bin
 	oc version
 }
+run() {
+	local PullSecret=$1
+	# After a host reboot a stale docker.sock may remain and cause "bind: address already in use".
+	# Remove it only if nothing is listening on it; VM and cluster data are untouched.
+	local sock=~/.crc/machines/crc/docker.sock
+	if [ -S "$sock" ] && ! ss -xl | grep -qF "$sock"; then
+		echo "Removing stale socket $sock"
+		rm -f "$sock"
+	fi
+	if [ -z "$PullSecret" ]; then
+		crc start
+	else
+		crc start -p $PullSecret
+	fi
+}
+stop() {
+	local status
+	status=$(crc status -o json 2>/dev/null || true)
+	if echo "$status" | grep -Eq '"crcStatus": *"(Running|Starting)"'; then
+		crc stop
+	else
+		echo "CRC VM is not running, skip stop"
+	fi
+}
 resize() {
-	crc stop --force false || true
+	stop
 
 	local HOST_CPUS=$(nproc)
 	local TARGET_CPUS=$((HOST_CPUS * 75 / 100))
