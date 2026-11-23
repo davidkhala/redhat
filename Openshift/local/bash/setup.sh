@@ -3,7 +3,7 @@ install() {
 
 	wget https://developers.redhat.com/content-gateway/rest/mirror/pub/cgw/crc/latest/crc-linux-amd64.tar.xz
 	tar xf crc-linux-amd64.tar.xz
-	# OpenShift 4.22
+	# OpenShift 5
 	chmod +x crc-linux-2.65.0-amd64/crc
 	sudo mv crc-linux-2.65.0-amd64/crc /usr/local/bin
 	rm -rf crc-linux-2.65.0-amd64 crc-linux-amd64.tar.xz
